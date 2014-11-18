@@ -71,28 +71,11 @@ void computePercentages()
 	{
 		if (benchRes[i].hits != 0)
 		{
+			
 			benchRes[i].percent = ((float)benchRes[i].hits / (float)TOTAL_HITS) * 100;
+			if (DEBUG) printf("%d \n",benchRes[i].percent);
 		}
 	}
-}
-
-/* -------------------------------------------------
-	timer function
-   ------------------------------------------------- */
-void CALLBACK TimerCallback(UINT tid, UINT b, DWORD_PTR usr, DWORD_PTR p2, DWORD_PTR p3)
-{
-	// measure time and display delay in microseconds
-	QueryPerformanceCounter(&T2);
-	LONGLONG result = ((T2.QuadPart - T1.QuadPart)*1000000) / Freq.QuadPart;
-	// printf("Timer %d - %d us\n", usr, result);
-	LONGLONG diff = result - SECOND_IN_MICRO;
-
-	sortSimpleResultInBenchResults(diff);
-	printResults();
-	//if (diff < 0) diff = -1 * diff;
-
-	// SHOULD DIVIDE DIFF BY 100
-	T1 = T2;
 }
 
 void fillBenchResultsCategories()
@@ -109,9 +92,9 @@ void fillBenchResultsCategories()
 	}
 }
 
-
-void sortSimpleResultInBenchResults(LONGLONG result)
-{ 
+DWORD WINAPI sortSimpleResultInBenchResults(LPVOID param)
+{
+	LONGLONG result = (LONGLONG) param;
 	// printf("Diff : %d us\n", result);
 	for (int i = 0; i < 14; i ++)
 	{
@@ -126,9 +109,11 @@ void sortSimpleResultInBenchResults(LONGLONG result)
 			
 			TOTAL_HITS = TOTAL_HITS + 1;
 			computePercentages();
-			break;
+			printResults();
+			return 0;
 		}
 	}
+	return 0;
 }
 
 
@@ -149,10 +134,23 @@ DWORD WINAPI stopThread(LPVOID param)
 	return 0;
 }
 
-
-void sortDiffResult(LONGLONG diffResult)
+/* -------------------------------------------------
+	timer function
+   ------------------------------------------------- */
+void CALLBACK TimerCallback(UINT tid, UINT b, DWORD_PTR usr, DWORD_PTR p2, DWORD_PTR p3)
 {
+	// measure time and display delay in microseconds
+	QueryPerformanceCounter(&T2);
+	LONGLONG result = ((T2.QuadPart - T1.QuadPart)*1000000) / Freq.QuadPart;
+	// printf("Timer %d - %d us\n", usr, result);
+	LONGLONG diff = result - SECOND_IN_MICRO;
+  
+	DWORD threadId;
+	HANDLE computingThread = CreateThread(NULL, 0, sortSimpleResultInBenchResults, (LPVOID)diff, 0, &threadId);
+	//sortSimpleResultInBenchResults(diff);
 	
+
+	T1 = T2;
 }
 
 /* -------------------------------------------------
@@ -176,7 +174,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Create utilities
 	hEvtStop = CreateEvent(NULL,TRUE,FALSE,NULL);
 	hThread = CreateThread(NULL,0,stopThread,hEvtStop,0,&Ti);
-
 	// prepare time measurement
 	QueryPerformanceFrequency(&Freq);
 	QueryPerformanceCounter(&T1);
