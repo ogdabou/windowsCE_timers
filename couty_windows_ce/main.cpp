@@ -8,6 +8,7 @@
 #pragma comment(lib,"mmtimer.lib")	// CE timer library
 #else
 #include "windows.h"
+#include <math.h>
 #pragma comment(lib,"winmm.lib")	// NT timer library
 #endif
 
@@ -40,6 +41,10 @@ struct BenchResults
 	int hits;
 	int percent;
 };
+
+float round(float value) {
+     return floor(value + 0.5);
+} 
 
 BenchResults benchRes[14];
 
@@ -78,8 +83,7 @@ void computePercentages()
 	{
 		if (benchRes[i].hits != 0)
 		{
-			
-			benchRes[i].percent = ((float)benchRes[i].hits / (float)TOTAL_HITS) * 100;
+			benchRes[i].percent = round(((float)benchRes[i].hits / (float)TOTAL_HITS) * 100);
 		}
 	}
 }
@@ -153,12 +157,12 @@ void CALLBACK TimerCallback(UINT tid, UINT b, DWORD_PTR usr, DWORD_PTR p2, DWORD
 	LONGLONG diff = result - SECOND_IN_MICRO;
 	if (MAX_PERIOD < result)
 	{
-		MAX_PERIOD = result;
+		MAX_PERIOD = round(result);
 	}
 
 	if (MIN_PERIOD > result || MIN_PERIOD == 0)
 	{
-		MIN_PERIOD = result;
+		MIN_PERIOD = round(result);
 	}
   
 	DWORD threadId;
@@ -166,7 +170,6 @@ void CALLBACK TimerCallback(UINT tid, UINT b, DWORD_PTR usr, DWORD_PTR p2, DWORD
 	
 	
 	//sortSimpleResultInBenchResults(diff);
-	
 
 	T1 = T2;
 }
@@ -217,8 +220,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	timeKillEvent(TimerID);
 	timeEndPeriod(1);
 
-	printf("Program will stop in 2 s\n");
-	Sleep(2000);
+	printf("Program will stop on keydown");
+	getchar();
 	printf("bye...");
 	return 0;
 }
