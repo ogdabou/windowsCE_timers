@@ -15,7 +15,7 @@
 /* =================================================
 	Constants
    ================================================= */
-#define PERIOD		1000    // milliseconds
+#define PERIOD		10    // milliseconds
 #define RESOLUTION	0		// best timer quality 
 
 
@@ -185,7 +185,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	UINT TimerID;
 
 	
-	SECOND_IN_MICRO = 1000000;
+	SECOND_IN_MICRO = 10000;
 	CAT_MAX = 70;
 	CAT_MIN = -60;
 	TOTAL_HITS = 0;
