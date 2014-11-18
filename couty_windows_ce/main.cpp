@@ -23,8 +23,9 @@
    ================================================= */
 LARGE_INTEGER T1,T2, Freq;  // time measurement variables
 unsigned int SECOND_IN_MICRO;
+LONGLONG MAX_PERIOD, MIN_PERIOD;
 
-int CAT_MIN, CAT_MAX, TOTAL_HITS;
+int CAT_MIN, CAT_MAX, TOTAL_HITS, TOTAL_CYCLES;
 
 
 bool DEBUG = true;
@@ -44,6 +45,12 @@ BenchResults benchRes[14];
 
 void printResults()
 {
+	printf("**************************\n");
+	printf("Timer period     : %d\n", PERIOD);
+	printf("Period MAX in ms : %d\n", MAX_PERIOD / 1000);
+	printf("Period MIN in ms : %d\n", MIN_PERIOD / 1000);
+	printf("**************************\n");
+	printf("Total timer cycle = %d\n", TOTAL_CYCLES);
 	printf("--------------------------\n");
 	printf(" ms  | hits| percentage   \n");
 	printf("--------------------------\n");
@@ -73,7 +80,6 @@ void computePercentages()
 		{
 			
 			benchRes[i].percent = ((float)benchRes[i].hits / (float)TOTAL_HITS) * 100;
-			if (DEBUG) printf("%d \n",benchRes[i].percent);
 		}
 	}
 }
@@ -98,15 +104,15 @@ DWORD WINAPI sortSimpleResultInBenchResults(LPVOID param)
 	// printf("Diff : %d us\n", result);
 	for (int i = 0; i < 14; i ++)
 	{
+		// TODO : changer cat_min et cat_max, il est possible quej e rate des valeurs
 		if (result > CAT_MIN && result < CAT_MAX && benchRes[i].category > result)
 		{
-			if (DEBUG) printf("Diff : %d > %d\n", benchRes[i].category, result);
+			//if (DEBUG) printf("Diff : %d > %d\n", benchRes[i].category, result);
 			if (result >= 0)
 			{
 				i = i - 1;
 			}
 			benchRes[i].hits = benchRes[i].hits + 1;
-			
 			TOTAL_HITS = TOTAL_HITS + 1;
 			computePercentages();
 			printResults();
@@ -141,12 +147,24 @@ void CALLBACK TimerCallback(UINT tid, UINT b, DWORD_PTR usr, DWORD_PTR p2, DWORD
 {
 	// measure time and display delay in microseconds
 	QueryPerformanceCounter(&T2);
+	TOTAL_CYCLES = TOTAL_CYCLES + 1;
 	LONGLONG result = ((T2.QuadPart - T1.QuadPart)*1000000) / Freq.QuadPart;
 	// printf("Timer %d - %d us\n", usr, result);
 	LONGLONG diff = result - SECOND_IN_MICRO;
+	if (MAX_PERIOD < result)
+	{
+		MAX_PERIOD = result;
+	}
+
+	if (MIN_PERIOD > result || MIN_PERIOD == 0)
+	{
+		MIN_PERIOD = result;
+	}
   
 	DWORD threadId;
 	HANDLE computingThread = CreateThread(NULL, 0, sortSimpleResultInBenchResults, (LPVOID)diff, 0, &threadId);
+	
+	
 	//sortSimpleResultInBenchResults(diff);
 	
 
@@ -168,6 +186,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	CAT_MAX = 70;
 	CAT_MIN = -60;
 	TOTAL_HITS = 0;
+	MAX_PERIOD = 0;
+	MIN_PERIOD = 0;
+	TOTAL_CYCLES = 0;
 	fillBenchResultsCategories();
 	printResults();
 
